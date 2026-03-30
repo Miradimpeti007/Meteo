@@ -1,15 +1,21 @@
+require('dotenv').config();
 const { Sequelize, DataTypes } = require('sequelize');
 
 /**
  * Initializes the Sequelize instance for PostgreSQL database connection.
- * Note: Hardcoded credentials should be replaced with environment variables in production.
+ * Connects using environment variables defined in the .env file.
  */
-const sequelize = new Sequelize('meteo_db', 'meteo_user', 'posq$12!', {
-  host: '10.70.2.86', 
-  port: 5432,
-  dialect: 'postgres',
-  logging: false, 
-});
+const sequelize = new Sequelize(
+  process.env.DB_NAME,
+  process.env.DB_USER,
+  process.env.DB_PASSWORD,
+  {
+    host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
+    dialect: process.env.DB_DIALECT,
+    logging: false,
+  }
+);
 
 /**
  * Defines the 'Prevision' model mapping to the 'previsions' table.
@@ -51,7 +57,7 @@ const Prevision = sequelize.define('Prevision', {
  */
 async function initDatabase() {
   try {
-    console.log('⏳ [INFO] Tentative de connexion à la base de données (10.70.2.86)...');
+    console.log(`⏳ [INFO] Tentative de connexion à la base de données (${process.env.DB_HOST}:${process.env.DB_PORT})...`);
     await sequelize.authenticate();
     console.log('✅ [SUCCÈS] Connexion à la base de données établie.');
     
