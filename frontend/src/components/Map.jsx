@@ -10,8 +10,9 @@ const Map = () => {
     if (map.current) return
 
     map.current = L.map(mapContainer.current, {
-      minZoom: 2,
+      minZoom: 3,
       maxZoom: 19,
+      maxBounds: [[-85, -180], [85, 180]],
     }).setView([48.8566, 2.3522], 13)
     
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
