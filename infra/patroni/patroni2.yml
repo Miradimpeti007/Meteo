@@ -1,0 +1,22 @@
+scope: ${PATRONI_SCOPE}
+name: postgres2
+
+restapi:
+  listen: 0.0.0.0:8008
+  connect_address: postgres2:8008
+
+etcd:
+  host: etcd:2379
+
+postgresql:
+  listen: 0.0.0.0:5432
+  connect_address: postgres2:5432
+  data_dir: /home/postgres/pgdata
+
+  authentication:
+    superuser:
+      username: ${POSTGRES_USER}
+      password: ${PATRONI_SUPERUSER_PASSWORD}
+    replication:
+      username: ${PATRONI_REPLICATION_USER}
+      password: ${PATRONI_REPLICATION_PASSWORD}
