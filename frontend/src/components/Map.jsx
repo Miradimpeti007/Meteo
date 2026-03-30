@@ -65,6 +65,9 @@ const Map = () => {
 
     map.current.on('zoomend', handleZoom)
   }, [])
+  setTimeout(() => {
+    map.current.invalidateSize()
+  }, 100)
 
   return <div ref={mapContainer} style={{ width: '100%', height: '100vh' }} />
 }
