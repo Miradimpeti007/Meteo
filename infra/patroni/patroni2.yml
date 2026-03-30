@@ -1,4 +1,4 @@
-scope: ${PATRONI_SCOPE}
+scope: meteo-cluster
 name: postgres2
 
 restapi:
@@ -12,11 +12,10 @@ postgresql:
   listen: 0.0.0.0:5432
   connect_address: postgres2:5432
   data_dir: /home/postgres/pgdata
-
   authentication:
     superuser:
-      username: ${POSTGRES_USER}
-      password: ${PATRONI_SUPERUSER_PASSWORD}
+      username: postgres
+      password: post12!
     replication:
-      username: ${PATRONI_REPLICATION_USER}
-      password: ${PATRONI_REPLICATION_PASSWORD}
+      username: replicator
+      password: a12345!

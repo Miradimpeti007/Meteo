@@ -3,7 +3,7 @@ x-postgres-common:
   image: ghcr.io/zalando/spilo-16:${SPILO_VERSION}
   restart: unless-stopped
   healthcheck:
-    test: ["CMD-SHELL", "pg_isready -U postgres"]
+    test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
     interval: 10s
     timeout: 5s
     retries: 5
@@ -48,9 +48,14 @@ services:
     environment:
       SCOPE: ${PATRONI_SCOPE}
       PATRONI_NAME: postgres1
+      ETCD3_HOST: etcd:2379
+      PATRONI_SUPERUSER_USERNAME: ${POSTGRES_USER}
+      PATRONI_SUPERUSER_PASSWORD: ${PATRONI_SUPERUSER_PASSWORD}
+      PATRONI_REPLICATION_USERNAME: ${PATRONI_REPLICATION_USER}
+      PATRONI_REPLICATION_PASSWORD: ${PATRONI_REPLICATION_PASSWORD}
     volumes:
       - pg1_data:/home/postgres/pgdata
-      - ./patroni/patroni1.yml:/home/postgres/patroni.yml
+      - ./patroni/patroni1.yml:/home/postgres/patroni.yml:ro
     depends_on:
       - etcd
 
@@ -61,9 +66,14 @@ services:
     environment:
       SCOPE: ${PATRONI_SCOPE}
       PATRONI_NAME: postgres2
+      ETCD3_HOST: etcd:2379
+      PATRONI_SUPERUSER_USERNAME: ${POSTGRES_USER}
+      PATRONI_SUPERUSER_PASSWORD: ${PATRONI_SUPERUSER_PASSWORD}
+      PATRONI_REPLICATION_USERNAME: ${PATRONI_REPLICATION_USER}
+      PATRONI_REPLICATION_PASSWORD: ${PATRONI_REPLICATION_PASSWORD}
     volumes:
       - pg2_data:/home/postgres/pgdata
-      - ./patroni/patroni2.yml:/home/postgres/patroni.yml
+      - ./patroni/patroni2.yml:/home/postgres/patroni.yml:ro
     depends_on:
       - etcd
       - postgres1
@@ -175,6 +185,8 @@ services:
     image: dpage/pgadmin4:${PGADMIN_VERSION}
     container_name: pgadmin
     env_file: ../.env
+    ports:
+      - "5050:80"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
       - ./pgadmin/servers.json:/pgadmin4/servers.json:ro
