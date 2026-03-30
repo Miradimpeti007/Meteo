@@ -56,6 +56,8 @@ services:
     volumes:
       - pg1_data:/home/postgres/pgdata
       - ./patroni/patroni1.yml:/home/postgres/patroni.yml:ro
+    ports:
+      - "5432:5432"
     depends_on:
       - etcd
 
@@ -74,6 +76,8 @@ services:
     volumes:
       - pg2_data:/home/postgres/pgdata
       - ./patroni/patroni2.yml:/home/postgres/patroni.yml:ro
+    ports:
+      - "5433:5432"
     depends_on:
       - etcd
       - postgres1
@@ -172,6 +176,11 @@ services:
     image: grafana/grafana:${GRAFANA_VERSION}
     container_name: grafana
     env_file: ../.env
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+    ports:
+      - "3000:3000"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
