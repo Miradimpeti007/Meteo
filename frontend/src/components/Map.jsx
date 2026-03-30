@@ -12,14 +12,18 @@ const Map = () => {
     map.current = L.map(mapContainer.current, {
       minZoom: 2.5,
       maxZoom: 19,
+      worldCopyJump: true,
     }).setView([48.8566, 2.3522], 13)
     
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
       maxZoom: 19,
-      noWrap: true,
+      noWrap: false,
     }).addTo(map.current)
   }, [])
+  setTimeout(() => {
+    map.current.invalidateSize()
+  }, 100)
 
   return <div ref={mapContainer} style={{ width: '100%', height: '500px' }} />
 }
