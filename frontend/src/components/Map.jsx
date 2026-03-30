@@ -10,7 +10,7 @@ const Map = () => {
     if (map.current) return
 
     map.current = L.map(mapContainer.current, {
-      minZoom: 2,
+      minZoom: 2.5,
       maxZoom: 19,
     }).setView([48.8566, 2.3522], 13)
     
