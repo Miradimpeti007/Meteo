@@ -164,6 +164,8 @@ services:
       dockerfile: Dockerfile
     container_name: backend
     env_file: ../.env
+    ports:
+      - "8888:8080"
     expose:
       - "8080"
     networks:
