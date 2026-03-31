@@ -1,9 +1,13 @@
 #!/usr/bin/env node
 
 const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '../../.env'), quiet: true });
+const { createRequire } = require('module');
 
-const { Sequelize, DataTypes, QueryTypes } = require('sequelize');
+// The backend dependencies are installed in backend/src.
+const srcRequire = createRequire(path.resolve(__dirname, '../src/package.json'));
+srcRequire('dotenv').config({ path: path.resolve(__dirname, '../../.env'), quiet: true });
+
+const { Sequelize, DataTypes, QueryTypes } = srcRequire('sequelize');
 
 function requireEnv(name) {
   const value = process.env[name];

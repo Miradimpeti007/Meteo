@@ -6,13 +6,21 @@ const { Sequelize, DataTypes } = require('sequelize');
  * Connects using environment variables defined in the .env file.
  */
 const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASSWORD,
+  process.env.DB_NAME || process.env.POSTGRES_DB,
+  process.env.DB_USER || process.env.POSTGRES_USER,
+  process.env.DB_PASSWORD || process.env.POSTGRES_PASSWORD,
   {
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT,
-    dialect: process.env.DB_DIALECT,
+    host: process.env.DB_HOST || process.env.POSTGRES_HOST,
+    port: process.env.DB_PORT || process.env.POSTGRES_PORT || 5432,
+    dialect: process.env.DB_DIALECT || 'postgres',
+    dialectOptions: (process.env.DB_SSL === 'true' || process.env.DB_SSL === true)
+      ? {
+          ssl: {
+            require: true,
+            rejectUnauthorized: process.env.DB_SSL_REJECT_UNAUTHORIZED === 'true'
+          }
+        }
+      : undefined,
     logging: false,
   }
 );
