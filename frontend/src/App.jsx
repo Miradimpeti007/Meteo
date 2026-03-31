@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Home from './pages/Home.jsx'
+import Map from './components/Map.jsx'
 import './styles/index.css'
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 
@@ -10,7 +11,7 @@ function App() {
     <>
     <Router>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<Map />} />
       </Routes>
     </Router>
     </>
