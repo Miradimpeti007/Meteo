@@ -1,0 +1,19 @@
+scope: cluster-south
+name: postgres4
+restapi:
+  listen: 0.0.0.0:8008
+  connect_address: postgres4:8008
+etcd3:
+  hosts:
+    - etcd:2379
+postgresql:
+  listen: 0.0.0.0:5432
+  connect_address: postgres4:5432
+  data_dir: /home/postgres/pgdata
+  authentication:
+    superuser:
+      username: postgres
+      password: $(PATRONI_SUPERUSER_PASSWORD)
+    replication:
+      username: replicator
+      password: $(PATRONI_REPLICATION_PASSWORD)
