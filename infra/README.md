@@ -125,7 +125,7 @@ Notes implementation:
   - `sud` -> ecriture sur `postgres3`
 - Le script insere des stations de villes differentes et verifie la presence/absence sur chaque serveur.
 
-## 4.2) Preuve de sharding a montrer au jury
+## 4.2) Preuve de sharding
 
 Execution:
 
