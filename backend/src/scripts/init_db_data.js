@@ -1,5 +1,6 @@
 require('dotenv').config();
 const { Sequelize, DataTypes } = require('sequelize');
+const PrevisionModel = require('../models/previsions');
 
 /**
  * Initializes the Sequelize instance using environment variables.
@@ -17,39 +18,9 @@ const sequelize = new Sequelize(
 );
 
 /**
- * Defines the 'Prevision' model with a uniqueness constraint on the 'name' field.
+ * Initializes the Prevision model by passing the sequelize instance.
  */
-const Prevision = sequelize.define('Prevision', {
-  id: {
-    type: DataTypes.INTEGER,
-    autoIncrement: true,
-    primaryKey: true
-  },
-  name: {
-    type: DataTypes.STRING,
-    allowNull: false,
-    unique: true // Ensures each city appears only once
-  },
-  indice: {
-    type: DataTypes.FLOAT, 
-    allowNull: true
-  },
-  longitude: {
-    type: DataTypes.FLOAT,
-    allowNull: false
-  },
-  latitude: {
-    type: DataTypes.FLOAT,
-    allowNull: false
-  },
-  dateprevison: {
-    type: DataTypes.DATE, 
-    allowNull: false
-  }
-}, {
-  tableName: 'previsions',
-  timestamps: true 
-});
+const Prevision = PrevisionModel(sequelize, DataTypes);
 
 /**
  * Dataset of 100 French cities with high-precision coordinates.
@@ -162,11 +133,8 @@ const frenchCities = [
  */
 async function seedDatabase() {
   try {
-    console.log('⏳ [INFO] Connexion pour le remplissage des données...');
+    console.log('[INFO] Connexion pour le remplissage des données...');
     await sequelize.authenticate();
-
-    // Re-sync with uniqueness constraint
-    await Prevision.sync({ alter: true });
 
     const seedData = frenchCities.map((city) => {
       // Random ATMO index between 1 and 6
@@ -179,19 +147,19 @@ async function seedDatabase() {
       return {
         name: city.name,
         indice: randomIndice,
-        latitude: city.latitude || city.lat,
-        longitude: city.longitude || city.lon,
-        dateprevison: date
+        latitude: city.lat,
+        longitude: city.lon,
+        dateprevision: date
       };
     });
 
-    console.log('⏳ [INFO] Insertion des 100 villes françaises...');
+    console.log('[INFO] Insertion des 100 villes françaises...');
     await Prevision.bulkCreate(seedData, { ignoreDuplicates: true });
     
-    console.log('✅ [SUCCÈS] 100 villes insérées avec succès (doublons ignorés).');
+    console.log('[SUCCESS] 100 villes insérées avec succès.');
     process.exit(0);
   } catch (error) {
-    console.error('❌ [ERREUR] Échec du remplissage :', error.message);
+    console.error('[ERREUR] Échec du remplissage :', error.message);
     process.exit(1);
   }
 }

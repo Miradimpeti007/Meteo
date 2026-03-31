@@ -2,7 +2,7 @@ require('dotenv').config();
 const { Sequelize, DataTypes } = require('sequelize');
 
 /**
- * Initializes the Sequelize instance for PostgreSQL database connection.
+ * Initializes the Sequelize instance for the PostgreSQL database connection.
  * Connects using environment variables defined in the .env file.
  */
 const sequelize = new Sequelize(
@@ -19,6 +19,8 @@ const sequelize = new Sequelize(
 
 /**
  * Defines the 'Prevision' model mapping to the 'previsions' table.
+ * Implements a composite unique constraint to handle historical data efficiently
+ * without allowing perfect duplicates.
  */
 const Prevision = sequelize.define('Prevision', {
   id: {
@@ -31,39 +33,48 @@ const Prevision = sequelize.define('Prevision', {
     allowNull: false
   },
   indice: {
-    type: DataTypes.FLOAT, 
-    allowNull: true
+    type: DataTypes.DOUBLE, 
+    allowNull: false
   },
   longitude: {
-    type: DataTypes.FLOAT,
+    type: DataTypes.DOUBLE,
     allowNull: false
   },
   latitude: {
-    type: DataTypes.FLOAT,
+    type: DataTypes.DOUBLE,
     allowNull: false
   },
-  dateprevison: {
+  dateprevision: {
     type: DataTypes.DATE, 
     allowNull: false
   }
 }, {
   tableName: 'previsions',
-  timestamps: true 
+  timestamps: true,
+  indexes: [
+    {
+      unique: true,
+      fields: ['name', 'dateprevision'],
+      name: 'unique_city_forecast_time'
+    }
+  ]
 });
 
 /**
  * Authenticates the connection and synchronizes the model with the database.
- * Outputs the execution process and handles potential connection errors.
+ * Utilizes { alter: true } to update existing tables without dropping them,
+ * ensuring structure matches the model definition.
  */
-async function initDatabase() {
+async function setupDatabase() {
   try {
     console.log(`⏳ [INFO] Tentative de connexion à la base de données (${process.env.DB_HOST}:${process.env.DB_PORT})...`);
     await sequelize.authenticate();
     console.log('✅ [SUCCÈS] Connexion à la base de données établie.');
     
     console.log('⏳ [INFO] Synchronisation du modèle "Prevision" avec la table "previsions"...');
+    // { alter: true } updates the table structure to match the model
     await Prevision.sync({ alter: true });
-    console.log('✅ [SUCCÈS] La table "previsions" est prête et synchronisée.');
+    console.log('✅ [SUCCÈS] La table "previsions" est prête et synchronisée avec la nouvelle architecture.');
     
     process.exit(0);
   } catch (error) {
@@ -73,4 +84,4 @@ async function initDatabase() {
   }
 }
 
-initDatabase();
+setupDatabase();

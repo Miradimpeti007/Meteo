@@ -1,25 +1,19 @@
-
 require('dotenv').config();
 
 const express = require('express');
 const { sequelize } = require('./models');
 const errorMiddleware = require('./middlewares/ErrorMiddleware');
+// 1. AJOUT DE L'IMPORT DU JOB (Le gestionnaire de tâches)
+const initJobs = require('./jobs/syncJob'); 
 
 const PORT = process.env.PORT || 8080;
 
-// Initialisation de l'application Express
+/** Intervalle de synchronisation (toutes les 3 heures) */
+const intTroisHeures = '0 */3 * * *'; 
 const server = express();
 
-/**
- * Configuration des middlewares globaux.
- * Permet l'analyse des requêtes entrantes avec des payloads au format JSON.
- */
 server.use(express.json());
 
-/**
- * Vérification de la connexion à la base de données.
- * Authentifie l'instance Sequelize et interrompt le processus en cas d'échec critique.
- */
 sequelize.authenticate()
     .then(() => console.log("✅ Connexion Sequelize OK"))
     .catch(err => {
@@ -27,31 +21,21 @@ sequelize.authenticate()
         process.exit(1);
     });
 
-/**
- * Point d'entrée principal de l'API.
- * Renvoie un message de bienvenue confirmant l'état opérationnel du serveur.
- */
 server.get("/", function(req, res) {
     res.status(200).json({ message: "Bienvenue sur l'API Météo !" });
 });
 
-/**
- * Nos endpoints d'API sont organisés dans des routes dédiées.
- * Chaque route est associée à un contrôleur spécifique pour une meilleure modularité.
- */
 server.use('/api/previsions', require('./routes/PrevisionRoutes'));
+server.use('/api/sync', require('./routes/syncRoutes'));
 
-
-/**
- * Middleware global de gestion des erreurs.
- * Intercepte et formate toutes les exceptions non gérées par les contrôleurs.
- */
 server.use(errorMiddleware);
 
-/**
- * Démarrage du serveur.
- * Initialise l'écoute des requêtes HTTP sur le port configuré.
- */
-server.listen(PORT, () => {
+// 2. MODIFICATION DU LISTEN POUR ACTIVER LES JOBS
+server.listen(PORT, async () => {
     console.log(`✅ Serveur lancé sur http://localhost:${PORT}`);
+    
+    // C'EST ICI QUE TOUT SE DÉCLENCHE :
+    // - Le cron des 3h est programmé
+    // - Le check de la BDD (les 10 jours) est lancé
+    await initJobs(intTroisHeures); 
 });

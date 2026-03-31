@@ -1,19 +1,22 @@
-const Sequelize = require('sequelize');
-module.exports = function(sequelize, DataTypes) {
-  return sequelize.define('previsions', {
+const { DataTypes } = require('sequelize');
+
+/**
+ * Exports the Prevision model definition.
+ * This function is used by the main Sequelize initialization to bind the model to the connection.
+ */
+module.exports = (sequelize) => {
+  return sequelize.define('Prevision', {
     id: {
-      autoIncrement: true,
       type: DataTypes.INTEGER,
-      allowNull: false,
+      autoIncrement: true,
       primaryKey: true
     },
     name: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
-      unique: "previsions_name_key"
+      type: DataTypes.STRING,
+      allowNull: false
     },
     indice: {
-      type: DataTypes.DOUBLE,
+      type: DataTypes.DOUBLE, 
       allowNull: true
     },
     longitude: {
@@ -24,30 +27,19 @@ module.exports = function(sequelize, DataTypes) {
       type: DataTypes.DOUBLE,
       allowNull: false
     },
-    dateprevison: {
-      type: DataTypes.DATE,
+    dateprevision: { 
+      type: DataTypes.DATE, 
       allowNull: false
     }
   }, {
-    sequelize,
     tableName: 'previsions',
-    schema: 'public',
     timestamps: true,
     indexes: [
       {
-        name: "previsions_name_key",
         unique: true,
-        fields: [
-          { name: "name" },
-        ]
-      },
-      {
-        name: "previsions_pkey",
-        unique: true,
-        fields: [
-          { name: "id" },
-        ]
-      },
+        fields: ['name', 'dateprevision'],
+        name: 'unique_city_forecast_time'
+      }
     ]
   });
 };
