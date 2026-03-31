@@ -3,7 +3,7 @@ x-postgres-common:
   image: ghcr.io/zalando/spilo-16:${SPILO_VERSION}
   restart: unless-stopped
   healthcheck:
-    test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+    test: ["CMD-SHELL", "pg_isready -U postgres"]
     interval: 10s
     timeout: 5s
     retries: 5
@@ -18,6 +18,8 @@ volumes:
   etcd_data:
   pg1_data:
   pg2_data:
+  pg3_data:
+  pg4_data:
   grafana_data:
   pgadmin_data:
 
@@ -35,6 +37,7 @@ services:
       --initial-cluster etcd0=http://etcd:2380
       --initial-cluster-token ${ETCD_INITIAL_CLUSTER_TOKEN}
       --initial-cluster-state new
+      --enable-v2=true
     volumes:
       - etcd_data:/etcd-data
     networks:
@@ -44,43 +47,80 @@ services:
   postgres1:
     <<: *postgres-common
     container_name: postgres1
+    hostname: postgres1
     env_file: ../.env
     environment:
-      SCOPE: ${PATRONI_SCOPE}
+      SCOPE: cluster-north
       PATRONI_NAME: postgres1
-      ETCD3_HOST: etcd:2379
+      ETCD_HOSTS: etcd:2379
       PATRONI_SUPERUSER_USERNAME: ${POSTGRES_USER}
       PATRONI_SUPERUSER_PASSWORD: ${PATRONI_SUPERUSER_PASSWORD}
       PATRONI_REPLICATION_USERNAME: ${PATRONI_REPLICATION_USER}
       PATRONI_REPLICATION_PASSWORD: ${PATRONI_REPLICATION_PASSWORD}
     volumes:
       - pg1_data:/home/postgres/pgdata
-      - ./patroni/patroni1.yml:/home/postgres/patroni.yml:ro
-    ports:
-      - "5432:5432"
+      - ./postgres/setup_postgis.py:/docker-entrypoint-initdb.d/setup_postgis.py:ro
+      - ./postgres/regions.geojson:/docker-entrypoint-initdb.d/regions.geojson:ro
     depends_on:
       - etcd
 
   postgres2:
     <<: *postgres-common
     container_name: postgres2
+    hostname: postgres2
     env_file: ../.env
     environment:
-      SCOPE: ${PATRONI_SCOPE}
+      SCOPE: cluster-north
       PATRONI_NAME: postgres2
-      ETCD3_HOST: etcd:2379
+      ETCD_HOSTS: etcd:2379
       PATRONI_SUPERUSER_USERNAME: ${POSTGRES_USER}
       PATRONI_SUPERUSER_PASSWORD: ${PATRONI_SUPERUSER_PASSWORD}
       PATRONI_REPLICATION_USERNAME: ${PATRONI_REPLICATION_USER}
       PATRONI_REPLICATION_PASSWORD: ${PATRONI_REPLICATION_PASSWORD}
     volumes:
       - pg2_data:/home/postgres/pgdata
-      - ./patroni/patroni2.yml:/home/postgres/patroni.yml:ro
-    ports:
-      - "5433:5432"
+      - ./postgres/setup_postgis.py:/docker-entrypoint-initdb.d/setup_postgis.py:ro
+      - ./postgres/regions.geojson:/docker-entrypoint-initdb.d/regions.geojson:ro
     depends_on:
       - etcd
       - postgres1
+
+  postgres3:
+    <<: *postgres-common
+    container_name: postgres3
+    hostname: postgres3
+    env_file: ../.env
+    environment:
+      SCOPE: cluster-south
+      PATRONI_NAME: postgres3
+      ETCD_HOSTS: etcd:2379
+      PATRONI_SUPERUSER_USERNAME: ${POSTGRES_USER}
+      PATRONI_SUPERUSER_PASSWORD: ${PATRONI_SUPERUSER_PASSWORD}
+      PATRONI_REPLICATION_USERNAME: ${PATRONI_REPLICATION_USER}
+      PATRONI_REPLICATION_PASSWORD: ${PATRONI_REPLICATION_PASSWORD}
+    volumes:
+      - pg3_data:/home/postgres/pgdata
+    depends_on:
+      - etcd
+
+  postgres4:
+    <<: *postgres-common
+    container_name: postgres4
+    hostname: postgres4
+    env_file: ../.env
+    environment:
+      SCOPE: cluster-south
+      PATRONI_NAME: postgres4
+      ETCD_HOSTS: etcd:2379
+      PATRONI_SUPERUSER_USERNAME: ${POSTGRES_USER}
+      PATRONI_SUPERUSER_PASSWORD: ${PATRONI_SUPERUSER_PASSWORD}
+      PATRONI_REPLICATION_USERNAME: ${PATRONI_REPLICATION_USER}
+      PATRONI_REPLICATION_PASSWORD: ${PATRONI_REPLICATION_PASSWORD}
+    volumes:
+      - pg4_data:/home/postgres/pgdata
+    depends_on:
+      - etcd
+      - postgres3
 
   postgres_exporter:
     image: prometheuscommunity/postgres-exporter:${POSTGRES_EXPORTER_VERSION}

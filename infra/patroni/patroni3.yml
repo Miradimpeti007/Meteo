@@ -1,8 +1,8 @@
-scope: cluster-north
-name: postgres1
+scope: cluster-south
+name: postgres3
 restapi:
   listen: 0.0.0.0:8008
-  connect_address: postgres1:8008
+  connect_address: postgres3:8008
 etcd3:
   hosts:
     - etcd:2379
@@ -27,7 +27,7 @@ bootstrap:
     - host all all 0.0.0.0/0 md5
 postgresql:
   listen: 0.0.0.0:5432
-  connect_address: postgres1:5432
+  connect_address: postgres3:5432
   data_dir: /home/postgres/pgdata
   authentication:
     superuser:
