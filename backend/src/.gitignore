@@ -1,0 +1,21 @@
+# Node modules
+/node_modules/
+
+# Fichiers de configuration sensibles
+.env
+
+# Fichiers de log
+*.log
+
+# Dossiers et fichiers de build
+/dist/
+/build/
+
+# Fichiers de cache
+/.vscode/
+*.tmp
+*.temp
+
+# Système
+.DS_Store
+Thumbs.db

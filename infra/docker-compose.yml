@@ -18,6 +18,8 @@ volumes:
   etcd_data:
   pg1_data:
   pg2_data:
+  pg3_data:
+  pg4_data:
   grafana_data:
   pgadmin_data:
 
@@ -35,6 +37,7 @@ services:
       --initial-cluster etcd0=http://etcd:2380
       --initial-cluster-token ${ETCD_INITIAL_CLUSTER_TOKEN}
       --initial-cluster-state new
+      --enable-v2=true
     volumes:
       - etcd_data:/etcd-data
     networks:
@@ -44,29 +47,80 @@ services:
   postgres1:
     <<: *postgres-common
     container_name: postgres1
+    hostname: postgres1
     env_file: ../.env
     environment:
-      SCOPE: ${PATRONI_SCOPE}
+      SCOPE: cluster-north
       PATRONI_NAME: postgres1
+      ETCD_HOSTS: etcd:2379
+      PATRONI_SUPERUSER_USERNAME: ${POSTGRES_USER}
+      PATRONI_SUPERUSER_PASSWORD: ${PATRONI_SUPERUSER_PASSWORD}
+      PATRONI_REPLICATION_USERNAME: ${PATRONI_REPLICATION_USER}
+      PATRONI_REPLICATION_PASSWORD: ${PATRONI_REPLICATION_PASSWORD}
     volumes:
       - pg1_data:/home/postgres/pgdata
-      - ./patroni/patroni1.yml:/home/postgres/patroni.yml
+      - ./postgres/setup_postgis.py:/docker-entrypoint-initdb.d/setup_postgis.py:ro
+      - ./postgres/regions.geojson:/docker-entrypoint-initdb.d/regions.geojson:ro
     depends_on:
       - etcd
 
   postgres2:
     <<: *postgres-common
     container_name: postgres2
+    hostname: postgres2
     env_file: ../.env
     environment:
-      SCOPE: ${PATRONI_SCOPE}
+      SCOPE: cluster-north
       PATRONI_NAME: postgres2
+      ETCD_HOSTS: etcd:2379
+      PATRONI_SUPERUSER_USERNAME: ${POSTGRES_USER}
+      PATRONI_SUPERUSER_PASSWORD: ${PATRONI_SUPERUSER_PASSWORD}
+      PATRONI_REPLICATION_USERNAME: ${PATRONI_REPLICATION_USER}
+      PATRONI_REPLICATION_PASSWORD: ${PATRONI_REPLICATION_PASSWORD}
     volumes:
       - pg2_data:/home/postgres/pgdata
-      - ./patroni/patroni2.yml:/home/postgres/patroni.yml
+      - ./postgres/setup_postgis.py:/docker-entrypoint-initdb.d/setup_postgis.py:ro
+      - ./postgres/regions.geojson:/docker-entrypoint-initdb.d/regions.geojson:ro
     depends_on:
       - etcd
       - postgres1
+
+  postgres3:
+    <<: *postgres-common
+    container_name: postgres3
+    hostname: postgres3
+    env_file: ../.env
+    environment:
+      SCOPE: cluster-south
+      PATRONI_NAME: postgres3
+      ETCD_HOSTS: etcd:2379
+      PATRONI_SUPERUSER_USERNAME: ${POSTGRES_USER}
+      PATRONI_SUPERUSER_PASSWORD: ${PATRONI_SUPERUSER_PASSWORD}
+      PATRONI_REPLICATION_USERNAME: ${PATRONI_REPLICATION_USER}
+      PATRONI_REPLICATION_PASSWORD: ${PATRONI_REPLICATION_PASSWORD}
+    volumes:
+      - pg3_data:/home/postgres/pgdata
+    depends_on:
+      - etcd
+
+  postgres4:
+    <<: *postgres-common
+    container_name: postgres4
+    hostname: postgres4
+    env_file: ../.env
+    environment:
+      SCOPE: cluster-south
+      PATRONI_NAME: postgres4
+      ETCD_HOSTS: etcd:2379
+      PATRONI_SUPERUSER_USERNAME: ${POSTGRES_USER}
+      PATRONI_SUPERUSER_PASSWORD: ${PATRONI_SUPERUSER_PASSWORD}
+      PATRONI_REPLICATION_USERNAME: ${PATRONI_REPLICATION_USER}
+      PATRONI_REPLICATION_PASSWORD: ${PATRONI_REPLICATION_PASSWORD}
+    volumes:
+      - pg4_data:/home/postgres/pgdata
+    depends_on:
+      - etcd
+      - postgres3
 
   postgres_exporter:
     image: prometheuscommunity/postgres-exporter:${POSTGRES_EXPORTER_VERSION}
@@ -140,6 +194,8 @@ services:
   cadvisor:
     image: gcr.io/cadvisor/cadvisor:${CADVISOR_VERSION}
     container_name: cadvisor
+    ports:
+      - "8080:8080"
     volumes:
       - /:/rootfs:ro
       - /var/run:/var/run:ro
@@ -152,6 +208,8 @@ services:
   prometheus:
     image: prom/prometheus:${PROMETHEUS_VERSION}
     container_name: prometheus
+    ports:
+      - "9090:9090"
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
     networks:
@@ -162,6 +220,11 @@ services:
     image: grafana/grafana:${GRAFANA_VERSION}
     container_name: grafana
     env_file: ../.env
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+    ports:
+      - "3000:3000"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/datasource.yml:/etc/grafana/provisioning/datasources/datasource.yml:ro
@@ -175,6 +238,8 @@ services:
     image: dpage/pgadmin4:${PGADMIN_VERSION}
     container_name: pgadmin
     env_file: ../.env
+    ports:
+      - "5050:80"
     volumes:
       - pgadmin_data:/var/lib/pgadmin
       - ./pgadmin/servers.json:/pgadmin4/servers.json:ro

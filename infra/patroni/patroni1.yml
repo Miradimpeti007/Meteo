@@ -1,28 +1,38 @@
-scope: ${PATRONI_SCOPE}
+scope: cluster-north
 name: postgres1
-
 restapi:
   listen: 0.0.0.0:8008
   connect_address: postgres1:8008
-
-etcd:
-  host: etcd:2379
-
+etcd3:
+  hosts:
+    - etcd:2379
 bootstrap:
   dcs:
     ttl: 30
     loop_wait: 10
     retry_timeout: 10
-
+    maximum_lag_on_failover: 1048576
+    postgresql:
+      use_pg_rewind: true
+      parameters:
+        wal_level: replica
+        hot_standby: "on"
+        max_wal_senders: 5
+        max_replication_slots: 5
+  initdb:
+    - encoding: UTF8
+    - data-checksums
+  pg_hba:
+    - host replication replicator 0.0.0.0/0 md5
+    - host all all 0.0.0.0/0 md5
 postgresql:
   listen: 0.0.0.0:5432
   connect_address: postgres1:5432
   data_dir: /home/postgres/pgdata
-
   authentication:
     superuser:
-      username: ${POSTGRES_USER}
-      password: ${PATRONI_SUPERUSER_PASSWORD}
+      username: postgres
+      password: $(PATRONI_SUPERUSER_PASSWORD)
     replication:
-      username: ${PATRONI_REPLICATION_USER}
-      password: ${PATRONI_REPLICATION_PASSWORD}
+      username: replicator
+      password: $(PATRONI_REPLICATION_PASSWORD)
