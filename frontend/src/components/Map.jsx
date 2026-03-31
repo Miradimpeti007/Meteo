@@ -3,64 +3,57 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import stationsData from '../assets/stations_features.json';
 
-// Giữ nguyên 3 trạng thái màu sắc của bạn
 const getPollutionColor = (index) => {
-  if (index >= 1 && index < 3) return '#33cc33'; // Vert - Bon
-  if (index >= 3 && index < 7) return '#ff9900'; // Orange - Moyen
-  if (index >= 7 && index <= 10) return '#ff3300'; // Rouge - Mauvais
+  if (index >= 1 && index < 3) return '#33cc33'; 
+  if (index >= 3 && index < 7) return '#ff9900'; 
+  if (index >= 7 && index <= 10) return '#ff3300'; 
   return '#999999';
 };
 
 const Map = () => {
   const mapContainer = useRef(null);
   const map = useRef(null);
+  const markersLayer = useRef(L.layerGroup());
+
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
-  const markersLayer = useRef(L.layerGroup());
+  const [showFilters, setShowFilters] = useState(false);
+  const [filterType, setFilterType] = useState('>'); 
+  const [filterValue, setFilterValue] = useState('');
 
   useEffect(() => {
     if (map.current) return;
 
-    // Khởi tạo bản đồ với tính năng cuộn vô hạn (worldCopyJump)
+    // Định nghĩa giới hạn bản đồ (Cực Nam -90, Cực Bắc 90)
+    // Chúng ta mở rộng kinh độ sang 2 bên để hỗ trợ cuộn ngang vô tận
+    const southWest = L.latLng(-85, -300);
+    const northEast = L.latLng(85, 300);
+    const bounds = L.latLngBounds(southWest, northEast);
+
     map.current = L.map(mapContainer.current, {
       minZoom: 3,
       maxZoom: 19,
-      worldCopyJump: true, // Cuộn vô hạn như Google Maps
+      worldCopyJump: true,
+      maxBounds: bounds,         // Khóa giới hạn vĩ độ
+      maxBoundsViscosity: 1.0    // Độ cứng của biên (1.0 là không cho kéo lệch khỏi biên)
     }).setView([46.6033, 1.8883], 6);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '© OpenStreetMap contributors',
-      noWrap: false, // Cho phép lặp lại bản đồ thế giới
+      noWrap: false, 
     }).addTo(map.current);
 
     markersLayer.current.addTo(map.current);
-
-    // Hiển thị các trạm từ dữ liệu
     renderMarkers();
 
-    // Fix lỗi hiển thị kích thước
-    setTimeout(() => {
-      map.current.invalidateSize();
-    }, 100);
-
-    // Lắng nghe sự kiện zoom để thay đổi kích thước bong bóng
-    const handleZoom = () => {
-      const zoom = map.current.getZoom();
-      const icons = document.querySelectorAll('.custom-pollution-icon div');
-      icons.forEach(icon => {
-        const size = zoom * 4;
-        if (size > 10) {
-          icon.style.width = `${size}px`;
-          icon.style.height = `${size}px`;
-          icon.style.fontSize = `${size / 2.5}px`;
-        }
-      });
-    };
-
-    map.current.on('zoomend', handleZoom);
+    setTimeout(() => map.current.invalidateSize(), 100);
   }, []);
 
-  const renderMarkers = (filterText = '') => {
+  useEffect(() => {
+    renderMarkers();
+  }, [searchTerm, filterType, filterValue, selectedDate]);
+
+  const renderMarkers = () => {
     markersLayer.current.clearLayers();
     const features = stationsData.features || stationsData;
 
@@ -68,65 +61,114 @@ const Map = () => {
       if (!station.geometry || !station.geometry.coordinates) return;
       
       const [lng, lat] = station.geometry.coordinates;
-      const name = station.properties?.Nom || station.properties?.name || "Station";
-
-      // Lọc theo tên trạm
-      if (filterText && !name.toLowerCase().includes(filterText.toLowerCase())) return;
-      
+      const name = station.properties?.Nom || "Station anonyme";
       const pollutionIndex = parseFloat(((Math.random() * 9) + 1).toFixed(1));
-      const color = getPollutionColor(pollutionIndex);
 
-      const customIcon = L.divIcon({
-        className: 'custom-pollution-icon',
-        html: `<div style="background-color: ${color}; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 11px; border: 2px solid rgba(255,255,255,0.5); box-shadow: 0 0 5px rgba(0,0,0,0.3); transition: all 0.2s ease;">${pollutionIndex}</div>`,
-        iconSize: [30, 30],
-        iconAnchor: [15, 15]
-      });
+      const matchName = name.toLowerCase().includes(searchTerm.toLowerCase());
+      let matchIndex = true;
+      
+      if (filterValue !== '') {
+        const val = parseFloat(filterValue);
+        if (filterType === '>') matchIndex = pollutionIndex > val;
+        if (filterType === '<') matchIndex = pollutionIndex < val;
+        if (filterType === '=') matchIndex = Math.floor(pollutionIndex) === val;
+      }
 
-      L.marker([lat, lng], { icon: customIcon })
-        .addTo(markersLayer.current)
-        .bindPopup(`<strong>${name}</strong><br>Indice de pollution: ${pollutionIndex}`);
+      if (matchName && matchIndex) {
+        const color = getPollutionColor(pollutionIndex);
+        const customIcon = L.divIcon({
+          className: 'custom-pollution-icon',
+          html: `<div style="background-color: ${color}; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 11px; border: 2px solid white; box-shadow: 0 2px 10px rgba(0,0,0,0.2);">${pollutionIndex}</div>`,
+          iconSize: [32, 32],
+          iconAnchor: [16, 16]
+        });
+
+        L.marker([lat, lng], { icon: customIcon })
+          .addTo(markersLayer.current)
+          .bindPopup(`<strong>${name}</strong><br>Indice de pollution : ${pollutionIndex}`);
+      }
     });
   };
 
-  // Xử lý khi người dùng gõ tìm kiếm
-  const onSearchChange = (e) => {
-    const value = e.target.value;
-    setSearchTerm(value);
-    renderMarkers(value);
-  };
-
   return (
-    <div style={{ position: 'relative', width: '100%', height: '100vh' }}>
+    <div style={{ position: 'relative', width: '100%', height: '100vh', fontFamily: 'sans-serif', overflow: 'hidden' }}>
       
-      {/* Barre de recherche et date (Thanh tìm kiếm và ngày) */}
+      {/* BARRE DE RECHERCHE PRINCIPALE */}
       <div style={{
         position: 'absolute', top: '20px', left: '50%', transform: 'translateX(-50%)',
-        zIndex: 1000, display: 'flex', gap: '10px', background: 'white',
-        padding: '10px 20px', borderRadius: '50px', boxShadow: '0 4px 15px rgba(0,0,0,0.2)',
-        width: '80%', maxWidth: '700px', alignItems: 'center'
+        zIndex: 1000, background: 'white', padding: '10px 20px', borderRadius: '50px',
+        boxShadow: '0 4px 25px rgba(0,0,0,0.2)', display: 'flex', alignItems: 'center',
+        width: '90%', maxWidth: '800px', gap: '15px'
       }}>
-        <input 
-          type="text" 
-          placeholder="Rechercher une station..." 
-          value={searchTerm}
-          onChange={onSearchChange}
-          style={{ flex: 2, border: 'none', outline: 'none', fontSize: '16px' }}
-        />
-        <div style={{ width: '1px', height: '25px', background: '#ccc' }}></div>
-        <input 
-          type="date" 
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          style={{ flex: 1, border: 'none', outline: 'none', cursor: 'pointer', color: '#666' }}
-        />
-        <button style={{ 
-          background: '#33cc33', color: 'white', border: 'none', 
-          borderRadius: '20px', padding: '8px 20px', cursor: 'pointer', fontWeight: 'bold' 
-        }}>
-          Filtrer
+        <div style={{ flex: 2, display: 'flex', alignItems: 'center' }}>
+          <span style={{ marginRight: '10px' }}>🔍</span>
+          <input 
+            type="text" 
+            placeholder="Nom de la station..." 
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ border: 'none', outline: 'none', width: '100%', fontSize: '15px' }}
+          />
+        </div>
+
+        <div style={{ width: '1px', height: '30px', background: '#eee' }}></div>
+
+        <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+          <span style={{ marginRight: '10px' }}>📅</span>
+          <input 
+            type="date" 
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            style={{ border: 'none', outline: 'none', cursor: 'pointer', fontSize: '14px', color: '#666' }}
+          />
+        </div>
+
+        <button 
+          onClick={() => setShowFilters(!showFilters)}
+          style={{
+            background: showFilters ? '#f0f0f0' : 'white',
+            border: '1px solid #ddd', borderRadius: '25px',
+            padding: '8px 18px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
+            fontSize: '14px', fontWeight: '500', transition: 'all 0.3s'
+          }}
+        >
+          <span>📊 Indice</span>
+          <span style={{ fontSize: '10px' }}>{showFilters ? '▲' : '▼'}</span>
         </button>
       </div>
+
+      {showFilters && (
+        <div style={{
+          position: 'absolute', top: '85px', left: '50%', transform: 'translateX(-50%)',
+          zIndex: 999, background: 'white', padding: '15px 25px', borderRadius: '20px',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.15)', display: 'flex', alignItems: 'center', gap: '15px',
+          border: '1px solid #f0f0f0'
+        }}>
+          <span style={{ fontSize: '14px', color: '#444', fontWeight: 'bold' }}>Pollution :</span>
+          <select 
+            value={filterType} 
+            onChange={(e) => setFilterType(e.target.value)}
+            style={{ padding: '8px', borderRadius: '10px', border: '1px solid #ddd', outline: 'none', cursor: 'pointer' }}
+          >
+            <option value=">">Supérieur à (&gt;)</option>
+            <option value="<">Inférieur à (&lt;)</option>
+            <option value="=">Égal à (=)</option>
+          </select>
+          <input 
+            type="number" 
+            placeholder="Valeur" 
+            value={filterValue}
+            onChange={(e) => setFilterValue(e.target.value)}
+            style={{ width: '80px', padding: '8px', borderRadius: '10px', border: '1px solid #ddd', outline: 'none' }}
+          />
+          <button 
+            onClick={() => {setFilterValue(''); setSearchTerm('');}}
+            style={{ background: 'none', border: 'none', color: '#ff3300', cursor: 'pointer', fontSize: '13px', textDecoration: 'underline' }}
+          >
+            Réinitialiser
+          </button>
+        </div>
+      )}
 
       <div ref={mapContainer} style={{ width: '100%', height: '100%' }} />
     </div>
