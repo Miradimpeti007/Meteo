@@ -7,5 +7,7 @@ const PrevisionController = require('../controllers/PrevisionController');
  * Endpoint: GET /api/previsions
  */
 router.get('/getAll', PrevisionController.getAll);
+router.get('/getActual', PrevisionController.getActual);
+router.get('/getDate:date:hour', PrevisionController.getDate);
 
 module.exports = router;
