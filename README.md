@@ -42,6 +42,15 @@ cd infra
 docker compose --env-file ../.env up -d
 ```
 
+### 4.b Rebuild backend apres ajout de dependances
+Si vous modifiez [backend/src/package.json](backend/src/package.json), il faut reconstruire l'image backend pour rendre les installs persistantes:
+
+```bash
+cd infra
+docker compose --env-file ../.env build backend
+docker compose --env-file ../.env up -d backend
+```
+
 ### 5. Vérifier
 ```bash
 docker compose --env-file ../.env ps
@@ -57,7 +66,7 @@ docker compose --env-file ../.env ps
 | Grafana | http://localhost:3000 | admin / voir .env |
 | pgAdmin | http://localhost:5050 | voir .env |
 | Prometheus | http://localhost:9090 | — |
-| cAdvisor | http://localhost:8080 | — |
+| cAdvisor | http://localhost:8081 | — |
 | Data API | http://localhost/api/data | — |
 
 ---

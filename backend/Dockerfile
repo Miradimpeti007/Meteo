@@ -1,18 +1,18 @@
 FROM node:20-alpine AS builder
 WORKDIR /app
-COPY package*.json ./
+
+# Install backend dependencies from backend/src package manifests.
+COPY src/package*.json ./
 RUN npm ci --omit=dev
-COPY . .
+
+# Copy backend source code into image.
+COPY src/ ./
 
 FROM node:20-alpine
 WORKDIR /app
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app .
-EXPOSE 3000
-CMD ["node", "src/index.js"]
+ENV NODE_ENV=production
 
-npm install express
-npm install sequelize pg pg-hstore
-npm install dotenv
-npm install axios
-npm install node-cron
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app ./
+EXPOSE 8080
+CMD ["node", "server.js"]

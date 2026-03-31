@@ -15,7 +15,7 @@ REPO_ROOT = ROOT.parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from data.src.processing.pipeline import build_df, fetch_current  # noqa: E402
+from src.processing.pipeline import build_df, fetch_current  # noqa: E402
 
 
 def _parse_date(s: str) -> datetime:

@@ -1,4 +1,5 @@
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
 
 const express = require('express');
 const { sequelize } = require('./models');
@@ -13,6 +14,12 @@ const intTroisHeures = '0 */3 * * *';
 const server = express();
 
 server.use(express.json());
+
+// DEBUG: Log all requests
+server.use((req, res, next) => {
+  console.log(`[DEBUG] ${req.method} ${req.url}`);
+  next();
+});
 
 sequelize.authenticate()
     .then(() => console.log("✅ Connexion Sequelize OK"))
@@ -31,7 +38,7 @@ server.use('/api/sync', require('./routes/syncRoutes'));
 server.use(errorMiddleware);
 
 // 2. MODIFICATION DU LISTEN POUR ACTIVER LES JOBS
-server.listen(PORT, async () => {
+server.listen(PORT, '0.0.0.0', async () => {
     console.log(`✅ Serveur lancé sur http://localhost:${PORT}`);
     
     // C'EST ICI QUE TOUT SE DÉCLENCHE :
