@@ -4,14 +4,14 @@ from datetime import datetime, date, timedelta
 
 import pandas as pd
 
-from data.src.processing.datagouv_client import (
+from src.processing.datagouv_client import (
     DataGouvSettings,
     fetch_pollution_and_synop_for_range,
 )
-from data.src.processing.indice_pollution import add_indice_final_column
-from data.src.processing.joins import geo_join_pollution_with_table, time_join_synop_pollution
-from data.src.processing.pollution_clean import clean_pollution_df
-from data.src.processing.synop_clean import clean_synop_df
+from src.processing.indice_pollution import add_indice_final_column
+from src.processing.joins import geo_join_pollution_with_table, time_join_synop_pollution
+from src.processing.pollution_clean import clean_pollution_df
+from src.processing.synop_clean import clean_synop_df
 
 
 ROOT = Path(__file__).resolve()

@@ -49,5 +49,8 @@ module.exports = async (intTroisHeures) => {
   
   initScheduler(intTroisHeures); 
   
-  await runStartupCheck();
+  // Start the check but don't wait for it (non-blocking)
+  runStartupCheck().catch(err => {
+    console.error('[STARTUP BACKGROUND ERROR]:', err.message);
+  });
 };
