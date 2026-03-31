@@ -29,10 +29,10 @@ def _parse_date(s: str) -> datetime:
 
 
 def _df_to_rows(df) -> list[dict[str, Any]]:
-    cols = [c for c in ["nom site", "lat_r", "lon_r", "hour_utc", "indice_final"] if c in df.columns]
+    cols = [c for c in ["nom site", "lat_r", "lon_r", "hour_utc", "indice_final", "indice_predicted"] if c in df.columns]
     return (
         df[cols]
-        .rename(columns={"lat_r": "lat", "lon_r": "lon", "nom site": "nom", "indice_final": "Indice"})
+        .rename(columns={"lat_r": "lat", "lon_r": "lon", "nom site": "nom", "indice_final": "Indice", "indice_predicted": "Indice Prédit"})
         .to_dict(orient="records")
     )
 

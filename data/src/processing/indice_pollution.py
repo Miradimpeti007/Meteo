@@ -1,7 +1,7 @@
 import hashlib
 import math
 from dataclasses import dataclass
-
+from sklearn.linear_model import LinearRegression
 import pandas as pd
 
 
@@ -88,4 +88,30 @@ def add_indice_final_column(df: pd.DataFrame) -> pd.DataFrame:
     facteur_meteo = 1.0 - 0.3 * ff_n + 0.2 * pres_n + 0.1 * u_n + 0.2 * t_n
 
     d["indice_final"] = (indice_pollution * facteur_meteo).clip(lower=0).round(3)
+    return d
+
+def add_regression_prediction(df: pd.DataFrame) -> pd.DataFrame:
+    features = ["ff", "pres", "u", "t", "valeur"]
+    target = "indice_final"
+
+    d = df.copy()
+    for c in features + [target]:
+        d[c] = pd.to_numeric(d[c], errors="coerce")
+    
+    clean = d.dropna(subset=features + [target])
+
+    if len(clean) < 2:
+        # Pas assez de données pour une régression fiable
+        d["indice_predicted"] = None
+        return df
+
+    x = clean[features].values
+    y = clean[target].values
+
+    model = LinearRegression()
+    model.fit(x, y)
+
+    X_full = d[features].fillna(0).values
+    d["indice_predicted"] = model.predict(X_full).round(3)
+
     return d

@@ -4,6 +4,8 @@ from datetime import datetime, date, timedelta
 
 import pandas as pd
 
+from data.src.processing.indice_pollution import add_regression_prediction
+
 from data.src.processing.datagouv_client import (
     DataGouvSettings,
     fetch_pollution_and_synop_for_range,
@@ -60,8 +62,8 @@ def build_df(start: date, end: date) -> pd.DataFrame:
     if df_joined.empty:
         return df_joined
 
-    return add_indice_final_column(df_joined)
-
+    df_joined = add_indice_final_column(df_joined)
+    return add_regression_prediction(df_joined)
 
 def fetch_current() -> pd.DataFrame:
     """
