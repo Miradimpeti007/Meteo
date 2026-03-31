@@ -18,6 +18,9 @@ async function runStartupCheck() {
       
       console.log(`[STARTUP] Récupération des ${days} derniers jours terminée.`);
     }
+    else{
+        await syncService.syncRecent();
+    }
   } catch (error) {
     console.error('[STARTUP ERROR] :', error.message);
   }
